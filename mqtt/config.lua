@@ -14,5 +14,8 @@ module.ID = node.chipid()
 module.DEVICE_ID = "anojuth6j6z"
 module.PASSWORD = "juth6j70"
 
-module.ENDPOINT = "nodemcu/"
+module.TOPIC = "office"
+
+module.PIN = 4
+
 return module

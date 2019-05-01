@@ -1,18 +1,18 @@
 local module = {}
 
 local function wifi_wait_ip()
-  if wifi.sta.getip()== nil then
-    print("IP unavailable, Waiting...")
-  else
-    config.mytmr:stop()
-    -- tmr.stop(1)
-    print("\n====================================")
-    print("ESP8266 mode is: " .. wifi.getmode())
-    print("MAC address is: " .. wifi.ap.getmac())
-    print("IP is "..wifi.sta.getip())
-    print("====================================")
-    app.start()
-  end
+    if wifi.sta.getip()== nil then
+        print("IP unavailable, Waiting...")
+    else
+        config.mytmr:stop()
+        -- tmr.stop(1)
+        print("\n====================================")
+        print("ESP8266 mode is: " .. wifi.getmode())
+        print("MAC address is: " .. wifi.ap.getmac())
+        print("IP is "..wifi.sta.getip())
+        print("====================================")
+        app.start()
+    end
 end
 
 local function wifi_start()
@@ -29,9 +29,9 @@ local function wifi_start()
 end
 
 function module.start()
-  print("Configuring Wifi ...")
-  wifi.setmode(wifi.STATION);
-  wifi.sta.getap(wifi_start)
+    print("Configuring Wifi ...")
+    wifi.setmode(wifi.STATION);
+    wifi.sta.getap(wifi_start)
 end
 
 return module

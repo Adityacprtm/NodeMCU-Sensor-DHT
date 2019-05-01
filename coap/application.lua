@@ -6,7 +6,7 @@ local payload = nil
 local function set_get_dht()
     pin = config.PIN
     status, temp, humi, temp_dec, humi_dec = dht.read(pin)
-    if status == dht.OK then   
+    if status == dht.OK then
         print("DHT Temperature:"..temp..";".."Humidity:"..humi)
         data_dht = {token=token,protocol="coap",timestamp=tmr.now(),topic=config.TOPIC,humidity={value=humi,unit="persen"},temperature={value=temp,unit="celcius"}}
         ok, payload = pcall(sjson.encode, data_dht)
