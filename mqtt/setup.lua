@@ -1,11 +1,11 @@
 local module = {}
+local mytmr = tmr.create()
 
 local function wifi_wait_ip()
-    if wifi.sta.getip()== nil then
+    if wifi.sta.getip() == nil then
         print("IP unavailable, Waiting...")
     else
-        config.mytmr:stop()
-        -- tmr.stop(1)
+        mytmr:stop()
         print("\n====================================")
         print("ESP8266 mode is: " .. wifi.getmode())
         print("MAC address is: " .. wifi.ap.getmac())
@@ -16,16 +16,12 @@ local function wifi_wait_ip()
 end
 
 local function wifi_start()
-    station_cfg={}
-    station_cfg.ssid=config.SSID
-    station_cfg.pwd=config.PWD
     wifi.setmode(wifi.STATION);
-    wifi.sta.config(station_cfg)
+    wifi.sta.config({ssid=config.SSID, pwd=config.PWD})
     wifi.sta.connect()
-    print("Connecting...")
-    --config.SSID = nil  -- can save memory
+    print("Connecting to "..config.SSID.."...")
     --tmr.alarm(1, 2500, 1, wifi_wait_ip)
-    config.mytmr:alarm(2500, tmr.ALARM_AUTO, function() wifi_wait_ip() end)
+    mytmr:alarm(2500, tmr.ALARM_AUTO, function() wifi_wait_ip() end)
 end
 
 function module.start()

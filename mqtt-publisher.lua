@@ -1,3 +1,5 @@
+
+local timer = require 'timer'
 -- WIFI Config
 station_cfg={}
 station_cfg.ssid="ap-testing"
@@ -6,19 +8,9 @@ wifi.sta.config(station_cfg)
 wifi.sta.connect()
 
 -- Initial var
-local mytmr = tmr.create()
 local token = nil
 local data_dht = nil
 local m = nil
-
--- Func mqtt conn pubs
-function mqtt_pub()
-    m = mqtt.Client("clientid", 120, token, nil)
-    m:connect("192.168.137.1", "1883",0, function(client)
-        print('Connected to broker')
-        client:publish("topic", data_dht, 1, 0, function(client) print("sent") end)
-    end)
-end
 
 -- Func set-get data temp and humi from dht sensor
 function set_get_dht()
@@ -34,6 +26,21 @@ function set_get_dht()
     end
 end
 
+-- Func mqtt conn pubs
+function mqtt_pub()
+    m = mqtt.Client("clientid", 120, token, nil)
+    m:connect("192.168.137.1", "1883",0, function(client)
+        print('Connected to broker')
+        set_get_dht() 
+        tmr.create():
+        client:publish("home", data_dht, 1, 0, function(client) 
+            print("sent") 
+        end)
+    end, function(client, reason)
+        print("failed reason: " .. reason)
+    end)
+end
+
 -- func get token from server auth
 function get_token()
     http.post('http://192.168.137.1:8080/device/request',
@@ -43,6 +50,7 @@ function get_token()
             if (code == 200) then
                 print(code, data)
                 token = data
+                mqtt_pub()
             elseif (code == 401) then
                 print(code, data)
                 print("Wait 30 sec")
@@ -55,7 +63,7 @@ end
 
 -- func loop
 function exec_loop()
-    if wifi.sta.getip() == nil then
+    if (wifi.sta.getip() == nil) then
         print("IP unavailable, Connecting...")
     else
         print("Connected to WIFI!")
@@ -63,11 +71,10 @@ function exec_loop()
         if token == nil then
             get_token()
         else
-            set_get_dht()
             mqtt_pub()
-            mytmr:stop()
+            tmr.create():stop()
         end
     end
 end
 
-mytmr:alarm(20000, tmr.ALARM_AUTO, function() exec_loop() end)
+tmr.create():alarm(20000, tmr.ALARM_SINGLE, function() exec_loop() end)

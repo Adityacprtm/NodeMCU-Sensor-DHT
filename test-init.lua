@@ -1,9 +1,10 @@
 -- Constants
-SSID    = "ap-testing"
-APPWD   = "attackme"
+station_cfg={}
+station_cfg.ssid="ap-testing"
+station_cfg.pwd="attackme"
 
 -- File that is executed after connection
-CMDFILE = "mqtt.lua"
+CMDFILE = "test-mqtt.lua"
 
 -- Some control variables
 wifiTrys     = 0      -- Counter of trys to connect to wifi
@@ -15,7 +16,7 @@ function launch()
     print("IP Address: " .. wifi.sta.getip())
 
     -- Call our command file every minute.
-    tmr.create():alarm(30000, tmr.ALARM_AUTO, function() dofile(CMDFILE) end )
+    tmr.create():alarm(10000, tmr.ALARM_AUTO, function() dofile(CMDFILE) end )
 end
 
 function checkWIFI()
@@ -27,7 +28,7 @@ function checkWIFI()
             tmr.create():alarm( 1000 , tmr.ALARM_AUTO , launch )
         else
             -- Reset alarm again
-            tmr.create():alarm( 0 , 2500 , 0 , checkWIFI)
+            tmr.create():alarm( 2500 , tmr.ALARM_AUTO , checkWIFI)
             print("Checking WIFI..." .. wifiTrys)
             wifiTrys = wifiTrys + 1
         end
@@ -41,7 +42,7 @@ if ( wifi.sta.getip() == nil ) then
     -- We aren't connected, so let's connect
     print("Configuring WIFI....")
     wifi.setmode( wifi.STATION )
-    wifi.sta.config( SSID , APPWD )
+    wifi.sta.config(station_cfg)
     print("Waiting for connection")
     tmr.create():alarm( 2000 , tmr.ALARM_AUTO , checkWIFI )  -- Call checkWIFI 2.5S in the future.
 else

@@ -1,13 +1,14 @@
 local module = {}
-local m = nil
-local token = nil
-local payload = nil
+local mytmr = tmr.create()
+m = nil
+token = nil
+payload = nil
 
 local function set_get_dht()
     pin = config.PIN
     status, temp, humi, temp_dec, humi_dec = dht.read(pin)
     if status == dht.OK then
-        print("DHT Temperature:"..temp..";".."Humidity:"..humi)
+        -- print("DHT Temperature:"..temp..";".."Humidity:"..humi)
         data_dht = {protocol="mqtt",timestamp=tmr.now(),topic=config.TOPIC,humidity={value=humi,unit="persen"},temperature={value=temp,unit="celcius"}}
         ok, payload = pcall(sjson.encode, data_dht)
         if ok then
@@ -22,22 +23,21 @@ local function set_get_dht()
     end
 end
 
-local function handle_mqtt_error(client, reason)
-    config.mytmr:alarm(10 * 1000, tmr.ALARM_SINGLE, mqtt_start())
-end
-
 local function mqtt_start()
-    m = mqtt.Client("clientid", 120, "token", nil)
+    m = mqtt.Client("clientid", 120, token, nil)
+    m:on("offline", function(client) print ("offline") end)
     m:connect(config.HOST, config.PORT_MQTT, 0, function(client) 
-        print ("connected") 
-        set_get_dht()
-        config.mytmr:alarm(5000, tmr.ALARM_AUTO, function() 
-            client:publish(config.TOPIC, payload, 1, 0, function(client) 
-                print("sent")
-            end) 
+        print ("connected")
+        mytimer = tmr.create()
+        mytimer:register(30000, tmr.ALARM_AUTO, function() 
+            set_get_dht()
+            client:publish(config.TOPIC,payload,1,0, function(client) print("Message published") end)
         end)
-    end, handle_mqtt_error())
-    m:close()
+        mytimer:interval(30000) -- actually, 3 seconds is better!
+        mytimer:start()
+    end, function(client, reason)
+        print("failed reason: " .. reason)
+    end)
 end
 
 local function get_token()
@@ -52,7 +52,7 @@ local function get_token()
             elseif (code == 401) then
                 print(code, data)
                 print("Wait 30 sec")
-                config.mytmr:alarm(20000, tmr.ALARM_SINGLE, function() get_token() end)
+                mytmr:alarm(20000, tmr.ALARM_SINGLE, function() get_token() end)
             else
                 print("HTTP request failed")
             end

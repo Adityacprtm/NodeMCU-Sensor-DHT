@@ -1,17 +1,15 @@
-m = mqtt.Client("nodemcu-123", 120, "user", "password")
-
---inisialisasi pin (gpio)
-pin=2
-gpio.mode(pin,gpio.OUTPUT)
-gpio.write(pin,gpio.HIGH)
+m = mqtt.Client("nodemcu-123", 120, "vomirrci", "qJuD87Qr10kZ")
 
 --Fungsi di bawah ini berfugsi untuk mengkonekkan device ke ip geeknesia.com
 function connect()
-    m:connect("geeknesia.com", 1883, 0, function(conn)
+    m:connect("m16.cloudmqtt.com", 19131, 0, function(client)
         print("connected")
-        m:lwt("iot/will", "device-8d7dc14bf6cf01xxxxxx", 0, 0)
-        m:subscribe("topic-8d7dc14bf6cf010dxxxxxx",0, function(conn)
+        client:lwt("iot/will", "device-8d7dc14bf6cf01xxxxxx", 0, 0)
+        client:subscribe("topic",0, function(conn)
             print("subscribe success")
+        end)
+        client:publish("topic", "hello", 1, 0, function(conn) 
+            print("Sent") 
         end)
     end)
 
@@ -32,11 +30,5 @@ m:on("message", function(conn, topic, data)
     print(topic .. ":" )
     if data ~= nil then
         print(data)
-        if data=="on" then
-            gpio.write(2, gpio.HIGH)
-        end
-        if data=="off" then
-            gpio.write(2, gpio.LOW)
-        end
     end
 end)
