@@ -9,8 +9,25 @@ local function set_get_dht()
     status, temp, humi, temp_dec, humi_dec = dht.read(pin)
     if status == dht.OK then
         -- print("DHT Temperature:"..temp..";".."Humidity:"..humi)
-        data_dht = {protocol="mqtt",timestamp=tmr.now(),topic=config.TOPIC,humidity={value=humi,unit="persen"},temperature={value=temp,unit="celcius"}}
-        ok, payload = pcall(sjson.encode, data_dht)
+        ok, payload = pcall(sjson.encode, {
+            protocol="mqtt",
+            timestamp=tmr.now(),
+            topic=config.TOPIC,
+            sensor={
+                tipe="esp8266",
+                index=node.chipid(),
+                ip=wifi.sta.getip(),
+                module="dht11"
+            },        
+            humidity={
+                value=humi,
+                unit="persen"
+            },
+            temperature={
+                value=temp,
+                unit="celcius"
+            }
+        })
         if ok then
             print(payload)
         else
