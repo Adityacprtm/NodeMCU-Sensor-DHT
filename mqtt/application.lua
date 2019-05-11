@@ -4,24 +4,26 @@ m = nil
 token = nil
 payload = nil
 
+local function decryption(cipher)
+    data = sjson.decode(cipher)
+    iv = encoder.fromHex(data.iv)
+    key = encoder.fromHex(config.KEY)
+    encryptedText = encoder.fromHex(data.cipher)
+    decrypted = crypto.decrypt(config.ALGORITHM, key, encryptedText, iv)
+    return string.sub(decrypted, 0, -9)
+end
+
 local function set_get_dht()
-    pin = config.PIN
-    status, temp, humi, temp_dec, humi_dec = dht.read(pin)
+    status, temp, humi, temp_dec, humi_dec = dht.read(config.PIN)
     if status == dht.OK then
         -- print("DHT Temperature:"..temp..";".."Humidity:"..humi)
         ok, payload = pcall(sjson.encode, {
             protocol="mqtt",
             timestamp=tmr.now(),
             topic=config.TOPIC,
-            sensor={
-                tipe="esp8266",
-                index=node.chipid(),
-                ip=wifi.sta.getip(),
-                module="dht11"
-            },        
             humidity={
                 value=humi,
-                unit="persen"
+                unit="%"
             },
             temperature={
                 value=temp,
@@ -41,16 +43,16 @@ local function set_get_dht()
 end
 
 local function mqtt_start()
-    m = mqtt.Client("clientid", 120, token, nil)
+    m = mqtt.Client(config.ID, 120, token, nil)
     m:on("offline", function(client) print ("offline") end)
-    m:connect(config.HOST, config.PORT_MQTT, 0, function(client) 
+    m:connect(config.HOST, config.PORT_MQTT, 0, function(client)
         print ("connected")
         mytimer = tmr.create()
-        mytimer:register(30000, tmr.ALARM_AUTO, function() 
+        mytimer:register(30000, tmr.ALARM_AUTO, function()
             set_get_dht()
-            client:publish(config.TOPIC,payload,1,0, function(client) print("Message published") end)
+            client:publish(config.ID..'/'..config.TOPIC,payload,1,0, function(client) print("Message published") end)
         end)
-        mytimer:interval(30000) -- actually, 3 seconds is better!
+        mytimer:interval(10000)
         mytimer:start()
     end, function(client, reason)
         print("failed reason: " .. reason)
@@ -64,7 +66,8 @@ local function get_token()
         function(code, data)
             if (code == 200) then
                 print(code, data)
-                token = data
+                token = decryption(data)
+                print(token)
                 mqtt_start()
             elseif (code == 401) then
                 print(code, data)

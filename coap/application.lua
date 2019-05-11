@@ -1,15 +1,36 @@
 local module = {}
+local mytmr = tmr.create()
 local cc = nil
 local token = nil
 local payload = nil
 
+local function decryption(cipher)
+    data = sjson.decode(cipher)
+    iv = encoder.fromHex(data.iv)
+    key = encoder.fromHex(config.KEY)
+    encryptedText = encoder.fromHex(data.cipher)
+    decrypted = crypto.decrypt(config.ALGORITHM, key, encryptedText, iv)
+    return string.sub(decrypted, 0, -9)
+end
+
 local function set_get_dht()
-    pin = config.PIN
-    status, temp, humi, temp_dec, humi_dec = dht.read(pin)
+    status, temp, humi, temp_dec, humi_dec = dht.read(config.PIN)
     if status == dht.OK then
-        print("DHT Temperature:"..temp..";".."Humidity:"..humi)
-        data_dht = {token=token,protocol="coap",timestamp=tmr.now(),topic=config.TOPIC,humidity={value=humi,unit="persen"},temperature={value=temp,unit="celcius"}}
-        ok, payload = pcall(sjson.encode, data_dht)
+        -- print("DHT Temperature:"..temp..";".."Humidity:"..humi)
+        ok, payload = pcall(sjson.encode, {
+            token=token,
+            protocol="coap",
+            timestamp=tmr.now(),
+            topic=config.TOPIC,
+            humidity={
+                value=humi,
+                unit="%"
+            },
+            temperature={
+                value=temp,
+                unit="celcius"
+            }
+        })
         if ok then
             print(payload)
         else
@@ -24,10 +45,13 @@ end
 
 local function coap_start()
     cc = coap.Client()
-    config.mytmr:alarm(30000, tmr.ALARM_AUTO, function()
+    mytimer = tmr.create()
+    mytimer:register(30000, tmr.ALARM_AUTO, function()
         set_get_dht()
-        cc:post(coap.CON, 'coap://'..config.HOST..':'..config.PORT_COAP..'/r/'..config.TOPIC, payload)
+        cc:post(coap.CON, 'coap://'..config.HOST..':'..config.PORT_COAP..'/r/'..config.ID..'/'..config.TOPIC, payload)
     end)
+    mytimer:interval(10000)
+    mytimer:start()
 end
 
 local function get_token()
@@ -37,12 +61,13 @@ local function get_token()
         function(code, data)
             if (code == 200) then
                 print(code, data)
-                token = data
+                token = decryption(data)
+                print(token)
                 coap_start()
             elseif (code == 401) then
                 print(code, data)
                 print("Wait 20 sec")
-                config.mytmr:alarm(20000, tmr.ALARM_SINGLE, function() get_token() end)
+                mytmr:alarm(20000, tmr.ALARM_SINGLE, function() get_token() end)
             else
                 print("HTTP request failed")
             end
