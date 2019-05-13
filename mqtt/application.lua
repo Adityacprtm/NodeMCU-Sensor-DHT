@@ -5,10 +5,9 @@ token = nil
 payload = nil
 
 local function decryption(cipher)
-    data = sjson.decode(cipher)
-    iv = encoder.fromHex(data.iv)
+    iv = encoder.fromHex(config.IV)
     key = encoder.fromHex(config.KEY)
-    encryptedText = encoder.fromHex(data.cipher)
+    encryptedText = encoder.fromHex(cipher)
     decrypted = crypto.decrypt(config.ALGORITHM, key, encryptedText, iv)
     return string.sub(decrypted, 0, -9)
 end
