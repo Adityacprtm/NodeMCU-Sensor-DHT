@@ -1,20 +1,21 @@
 local module = {}
 
-module.SSID = "ap-testing"
-module.PWD = "attackme"
+module.SSID = "AL-KHAWARIZMI"
+module.PWD = "ibadurrahman"
 
-module.HOST = "192.168.137.1"
+module.HOST = "192.168.0.13"
 module.PORT_COAP = 5683
 
 module.PATH_AUTH = "/device/request"
-module.PORT_AUTH = 8080
+module.PORT_AUTH = 80
 module.ALGORITHM = "AES-CBC"
 
 module.ID = node.chipid()
 
-module.DEVICE_ID = "e4838d7e3ee627002cf97ab7de3066857d4509d33fe101afdafb5fda29f3577e"
-module.PASSWORD = "8c558fef290d83bb7e70a8c011ecebeee14e1293b25dfae9d63250e3141897c3"
-module.KEY = "048d6b03d40e243dae2f2437900f311a"
+module.DEVICE_ID = "4a83e9a771004924495dd843aaeac76e145df42e2db7968aa660181cfda5229e"
+module.PASSWORD = "641e4670ff70255391ca779a385766edaafb1df0fbff5f3a28e0f19a9dc08e46"
+module.KEY = "17922ef895d7f9eed51705fa618902d7"
+module.IV = "ccc1730477fee41329a875286abce3f0"
 
 module.TOPIC = "home"
 

@@ -2,6 +2,12 @@ local module = {}
 local mytmr = tmr.create()
 
 local function wifi_wait_ip()
+    if wifi.sta.status() == wifi.STA_IDLE then print("IDLE") end;
+    if wifi.sta.status() == wifi.STA_CONNECTING then print("CONNECTING") end;
+    if wifi.sta.status() == wifi.STA_WRONGPWD then print("WRONG PS") end;
+    if wifi.sta.status() == wifi.STA_APNOTFOUND then print("404") end;
+    if wifi.sta.status() == wifi.STA_FAIL then print("500") end;
+    if wifi.sta.status() == wifi.STA_GOTIP then print("IP GOT") end;
     if wifi.sta.getip() == nil then
         print("IP unavailable, Waiting...")
     else
