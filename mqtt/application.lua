@@ -70,7 +70,7 @@ local function get_token()
                 mqtt_start()
             elseif (code == 401) then
                 print(code, data)
-                print("Wait 30 sec")
+                print("Wait 20 sec")
                 mytmr:alarm(20000, tmr.ALARM_SINGLE, function() get_token() end)
             else
                 print("HTTP request failed")
