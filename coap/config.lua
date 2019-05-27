@@ -1,9 +1,9 @@
 local module = {}
 
-module.SSID = "AL-KHAWARIZMI"
-module.PWD = "ibadurrahman"
+module.SSID = "HoaxyFox"
+module.PWD = "waduhekk"
 
-module.HOST = "192.168.0.13"
+module.HOST = "192.168.43.10"
 module.PORT_COAP = 5683
 
 module.PATH_AUTH = "/device/request"
