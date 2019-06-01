@@ -61,7 +61,7 @@ end
 local function get_token()
     http.post('http://'..config.HOST..':'..config.PORT_AUTH..config.PATH_AUTH,
         'Content-Type: application/json\r\n',
-        '{"device_id":"'..config.DEVICE_ID..'","password":"'..config.PASSWORD..'"}',
+        '{"device_id":"'..config.DEVICE_ID..'","device_password":"'..config.PASSWORD..'"}',
         function(code, data)
             if (code == 200) then
                 print(code, data)
