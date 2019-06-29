@@ -3,14 +3,15 @@ local mytmr = tmr.create()
 m = nil
 token = nil
 payload = nil
+rtctime.set(1561601630, 0)
 
-local function decryption(cipher)
-    iv = encoder.fromHex(config.IV)
-    key = encoder.fromHex(config.KEY)
-    encryptedText = encoder.fromHex(cipher)
-    decrypted = crypto.decrypt(config.ALGORITHM, key, encryptedText, iv)
-    return string.sub(decrypted, 0, -9)
-end
+-- local function decryption(cipher)
+--     iv = encoder.fromHex(config.IV)
+--     key = encoder.fromHex(config.KEY)
+--     encryptedText = encoder.fromHex(cipher)
+--     decrypted = crypto.decrypt(config.ALGORITHM, key, encryptedText, iv)
+--     return string.sub(decrypted, 0, -9)
+-- end
 
 local function set_get_dht()
     status, temp, humi, temp_dec, humi_dec = dht.read(config.PIN)
@@ -49,9 +50,12 @@ local function mqtt_start()
         mytimer = tmr.create()
         mytimer:register(30000, tmr.ALARM_AUTO, function()
             set_get_dht()
-            client:publish(config.ID..'/'..config.TOPIC,payload,1,0, function(client) print("Message published") end)
+            client:publish(config.ID..'/'..config.TOPIC,payload,1,0, function(client) 
+                print("Message published") 
+                print(rtctime.get())
+            end)
         end)
-        mytimer:interval(10000)
+        mytimer:interval(30000)
         mytimer:start()
     end, function(client, reason)
         print("failed reason: " .. reason)
@@ -65,8 +69,10 @@ local function get_token()
         function(code, data)
             if (code == 200) then
                 print(code, data)
-                token = decryption(data)
-                print(token)
+                -- token = decryption(data)
+                -- print(token)
+                t = sjson.decode(data)
+                token = t.token
                 mqtt_start()
             elseif (code == 401) then
                 print(code, data)
@@ -79,6 +85,7 @@ local function get_token()
 end
 
 function module.start()
+    print(rtctime.get())
     if (token == nil) then
         get_token()
     else

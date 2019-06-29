@@ -3,14 +3,15 @@ local mytmr = tmr.create()
 local cc = nil
 local token = nil
 local payload = nil
+rtctime.set(1561601630, 0)
 
-local function decryption(cipher)
-    iv = encoder.fromHex(config.IV)
-    key = encoder.fromHex(config.KEY)
-    encryptedText = encoder.fromHex(cipher)
-    decrypted = crypto.decrypt(config.ALGORITHM, key, encryptedText, iv)
-    return string.sub(decrypted, 0, -9)
-end
+-- local function decryption(cipher)
+--     iv = encoder.fromHex(config.IV)
+--     key = encoder.fromHex(config.KEY)
+--     encryptedText = encoder.fromHex(cipher)
+--     decrypted = crypto.decrypt(config.ALGORITHM, key, encryptedText, iv)
+--     return string.sub(decrypted, 0, -9)
+-- end
 
 local function set_get_dht()
     status, temp, humi, temp_dec, humi_dec = dht.read(config.PIN)
@@ -44,13 +45,14 @@ end
 
 local function coap_start()
     cc = coap.Client()
-    mytimer = tmr.create()
-    mytimer:register(30000, tmr.ALARM_AUTO, function()
+    --mytimer = tmr.create()
+    --mytimer:register(30000, tmr.ALARM_AUTO, function()
         set_get_dht()
         cc:post(coap.CON, 'coap://'..config.HOST..':'..config.PORT_COAP..'/r/'..config.ID..'/'..config.TOPIC, payload)
-    end)
-    mytimer:interval(10000)
-    mytimer:start()
+        print(rtctime.get())
+    --end)
+    --mytimer:interval(10000)
+    --mytimer:start()
 end
 
 local function get_token()
@@ -60,8 +62,10 @@ local function get_token()
         function(code, data)
             if (code == 200) then
                 print(code, data)
-                token = decryption(data)
-                print(token)
+                -- token = decryption(data)
+                t = sjson.decode(data)
+                token = t.token
+                --print(token)
                 coap_start()
             elseif (code == 401) then
                 print(code, data)
@@ -74,6 +78,7 @@ local function get_token()
 end
 
 function module.start()
+    print(rtctime.get())
     if (token == nil) then
         get_token()
     else
