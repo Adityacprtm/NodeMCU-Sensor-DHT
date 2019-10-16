@@ -3,89 +3,105 @@ local mytmr = tmr.create()
 m = nil
 token = nil
 payload = nil
-rtctime.set(1561601630, 0)
-
--- local function decryption(cipher)
---     iv = encoder.fromHex(config.IV)
---     key = encoder.fromHex(config.KEY)
---     encryptedText = encoder.fromHex(cipher)
---     decrypted = crypto.decrypt(config.ALGORITHM, key, encryptedText, iv)
---     return string.sub(decrypted, 0, -9)
--- end
 
 local function set_get_dht()
     status, temp, humi, temp_dec, humi_dec = dht.read(config.PIN)
     if status == dht.OK then
         -- print("DHT Temperature:"..temp..";".."Humidity:"..humi)
         ok, payload = pcall(sjson.encode, {
-            protocol="mqtt",
-            timestamp=tmr.now(),
-            topic=config.TOPIC,
-            humidity={
-                value=humi,
-                unit="%"
-            },
-            temperature={
-                value=temp,
-                unit="celcius"
-            }
+            protocol = "mqtt",
+            timestamp = tmr.now(),
+            topic = config.TOPIC,
+            humidity = {value = humi, unit = "%"},
+            temperature = {value = temp, unit = "celcius"}
         })
         if ok then
-            print(payload)
+            -- print(payload)
         else
             print("failed to encode!")
         end
     elseif status == dht.ERROR_CHECKSUM then
-        print( "DHT Checksum error." )
+        print("DHT Checksum error.")
     elseif status == dht.ERROR_TIMEOUT then
-        print( "DHT timed out." )
+        print("DHT timed out.")
     end
 end
 
 local function mqtt_start()
+    counter = 1
+    maxCounter = config.COUNT
+
     m = mqtt.Client(config.ID, 120, token, nil)
-    m:on("offline", function(client) print ("offline") end)
-    m:connect(config.HOST, config.PORT_MQTT, 0, function(client)
-        print ("connected")
+
+    -- print("mqtt connecting ...")
+    conSec, conUsec = rtctime.get()
+    m:connect(config.HOST, config.PORT_MQTT, false, function(client) end,
+              function(client, reason) print("failed reason: " .. reason) end)
+
+    m:on("connect", function(client)
+        -- print("mqtt connected")
+        conSec2, conUsec2 = rtctime.get()
+        print("\tconn time (sec):\t" ..
+                  (conUsec2 + ((conSec2 - conSec) * 1000000) - conUsec) /
+                  1000000)
         mytimer = tmr.create()
-        mytimer:register(30000, tmr.ALARM_AUTO, function()
-            set_get_dht()
-            client:publish(config.ID..'/'..config.TOPIC,payload,1,0, function(client) 
-                print("Message published") 
-                print(rtctime.get())
-            end)
+        mytimer:register(10000, tmr.ALARM_AUTO, function(t)
+            if counter <= maxCounter then
+                set_get_dht()
+                -- print("publishing message")
+                pubSec, pubUsec = rtctime.get()
+                client:publish(config.ID .. '/' .. config.TOPIC, payload, 1, 0,
+                               function(client) end)
+                client:on("puback", function(client, topic, message)
+                    -- print("Message published")
+                    pubSec2, pubUsec2 = rtctime.get()
+                    print(counter .. "\tpubs time (sec):\t" ..
+                              (pubUsec2 + ((pubSec2 - pubSec) * 1000000) -
+                                  pubUsec) / 1000000)
+                end)
+            else
+                print(maxCounter .. " messages successfully published")
+                t:unregister()
+            end
+            counter = counter + 1
         end)
-        mytimer:interval(30000)
+        mytimer:interval(3000)
         mytimer:start()
-    end, function(client, reason)
-        print("failed reason: " .. reason)
     end)
+
+    m:on("offline", function(client) print("offline") end)
 end
 
 local function get_token()
-    http.post('http://'..config.HOST..':'..config.PORT_AUTH..config.PATH_AUTH,
-        'Content-Type: application/json\r\n',
-        '{"device_id":"'..config.DEVICE_ID..'","device_password":"'..config.PASSWORD..'"}',
-        function(code, data)
-            if (code == 200) then
-                print(code, data)
-                -- token = decryption(data)
-                -- print(token)
-                t = sjson.decode(data)
-                token = t.token
-                mqtt_start()
-            elseif (code == 401) then
-                print(code, data)
-                print("Wait 20 sec")
-                mytmr:alarm(20000, tmr.ALARM_SINGLE, function() get_token() end)
-            else
-                print("HTTP request failed")
-            end
-        end)
+    reqSec, reqUsec = rtctime.get() -- req token
+    http.post('http://' .. config.HOST .. ':' .. config.PORT_AUTH ..
+                  config.PATH_AUTH, 'Content-Type: application/json\r\n',
+              '{"things_id":"' .. config.THINGS_ID .. '","things_password":"' ..
+                  config.THINGS_PASSWORD .. '"}', function(code, data)
+        if (code == 200) then
+            -- print(code, data)
+            -- token = decryption(data)
+            -- print(token)
+            t = sjson.decode(data)
+            token = t.token
+            reqSec2, reqUsec2 = rtctime.get()
+            print("\treq time (sec):\t" ..
+                      (reqUsec2 + ((reqSec2 - reqSec) * 1000000) - reqUsec) /
+                      1000000)
+            mqtt_start()
+        elseif (code == 401) then
+            print(code, data)
+            print("Wait 20 sec")
+            mytmr:alarm(20000, tmr.ALARM_SINGLE, function()
+                get_token()
+            end)
+        else
+            print("HTTP request failed")
+        end
+    end)
 end
 
 function module.start()
-    print(rtctime.get())
     if (token == nil) then
         get_token()
     else

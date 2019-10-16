@@ -1,25 +1,23 @@
 local module = {}
 
-module.SSID = "MyRasPiApp"
-module.PWD = "pleasehelpme"
+module.SSID = "RaspiAP"
+module.PWD = "pokemon48"
 
-module.HOST = "192.168.100.1"
+module.HOST = "172.16.100.1"
 module.PORT_MQTT = 1883
 
-module.PATH_AUTH = "/device/request"
+module.PATH_AUTH = "/things/request"
 module.PORT_AUTH = 80
-module.ALGORITHM = "AES-CBC"
 
 module.ID = node.chipid()
 
-module.DEVICE_ID = "05693c53e99f144585513e5809be9d08a912f2c6d8859b20a97bd187cfc82d98"
-module.PASSWORD = "292a66d43de240ef04e89284b900ce80cb2e9abdf78e7103fc66975918a8618a"
-
--- module.KEY = "1e595ebbbe8cca1a3cbaeb6411d16fe4"
--- module.IV = "fa86d7acf043382456746dabcd8db57b"
+module.THINGS_ID = "b77f0cd1c54ffd485ae11c0113b99fafb87676607d9cc79eb758768fa8878bda"
+module.THINGS_PASSWORD = "ba2afcf008ddf67202e43544e9e89101fe97b94768383c6dfb4791e67eec4e76"
 
 module.TOPIC = "home"
 
 module.PIN = 4
+
+module.COUNT = 100
 
 return module
